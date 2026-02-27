@@ -1,0 +1,35 @@
+# fallback_config.yaml
+
+model_fallbacks:
+  confidence_threshold: 0.65
+  circuit_breaker_threshold: 3
+  cooldown_seconds: 60
+  timeout_seconds: 2.0
+
+  chains:
+    image_classifier:
+      primary: efficientnet_b4
+      secondary: xception
+      emergency: efficientnet_b0_lite
+    temporal_classifier:
+      primary: cnn_lstm_full
+      secondary: cnn_lstm_pruned
+      emergency: frame_average_heuristic
+    audio_deepfake:
+      primary: rawnet2
+      secondary: aasist
+      emergency: mfcc_threshold
+
+pipeline_fallbacks:
+  face_detection:
+    chain: [yolov8_face, mtcnn, retinaface, full_frame]
+  degradation_score_warning_threshold: 30
+  degradation_score_critical_threshold: 60
+
+infrastructure:
+  zones: [us-east-1a, us-east-1b, us-west-2a]
+  primary_zone: us-east-1a
+  failover_latency_ms: 30000
+  gpu_fallback_cpu_enabled: true
+  queue_buffer_max_seconds: 120
+  dlq_max_retries: 3
