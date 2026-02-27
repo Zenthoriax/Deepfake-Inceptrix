@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Sentinel | Threat Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f1015;
+            --glass-bg: rgba(20, 22, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #4ade80;
+            --danger: #f87171;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(74, 222, 128, 0.15), transparent 25%);
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #4ade80, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            padding: 4rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .analyze-btn {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .analyze-btn.active {
+            opacity: 1;
+            pointer-events: all;
+            box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.5);
+        }
+
+        .analyze-btn.active:hover {
+            transform: translateY(-2px);
+        }
+
+        .analyze-btn.loading {
+            background: #1e293b;
+            animation: pulse 1.5s infinite;
+        }
+
+        .result-panel {
+            margin-top: 2rem;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .verdict {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .verdict h2 {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .verdict .REAL {
+            color: var(--primary);
+        }
+
+        .verdict .FAKE {
+            color: var(--danger);
+        }
+
+        .confidence-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            position: relative;
+        }
+
+        .confidence-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            padding: 4px;
+            background: conic-gradient(var(--accent) var(--p), rgba(255, 255, 255, 0.1) 0);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .metadata p {
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metadata span {
+            color: var(--text-main);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .preview-container {
+            margin-top: 2rem;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .preview-container img,
+        .preview-container video {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            background: #000;
+        }
+
+        #selected-filename {
+            margin-top: 1rem;
+            color: var(--text-main);
+            font-weight: 600;
+            display: none;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .api-panel {
+            margin-top: 3rem;
+            background: rgba(20, 22, 30, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        .api-panel h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .api-input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .api-input-group input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .api-input-group button {
+            padding: 0.8rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .api-input-group button:hover {
+            opacity: 0.8;
+        }
+
+        #generated-key-display {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            color: var(--primary);
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 650px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
+        .keys-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .key-item {
+            padding: 1.2rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-family: monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .key-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .key-item span {
+            font-size: 1.1rem;
+            word-break: break-all;
+            padding-right: 1rem;
+            color: var(--text-main);
+        }
+
+        .key-item .copy-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .key-item .copy-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Deep Sentinel</h1>
+            <p class="subtitle">Multi-Tier Deepfake Detection Engine</p>
+        </header>
+
+        <div class="glass-panel">
+            <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                <div class="upload-icon">📷</div>
+                <h3 id="upload-text">Drag & Drop Image or Video</h3>
+                <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.9rem;">Supports MP4, AVI, JPG, PNG
+                </p>
+                <input type="file" id="file-input" accept="image/*,video/*" onchange="handleFileSelect(this)">
+                <div id="selected-filename"></div>
+            </div>
+
+            <div class="preview-container" id="preview-container">
+                <img id="img-preview" style="display:none;">
+                <video id="vid-preview" controls style="display:none;"></video>
+            </div>
+
+            <button class="analyze-btn" id="analyze-btn" onclick="analyzeMedia()">Analyze Media</button>
+
+            <div class="result-panel" id="result-panel">
+                <div class="result-card">
+                    <div class="verdict">
+                        <div>
+                            <p
+                                style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                                Detection Result</p>
+                            <h2 id="prediction-text" class="REAL">REAL</h2>
+                        </div>
+                        <div class="confidence-ring" id="confidence-ring" style="--p: 0%;">
+                            <span id="confidence-text">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="metadata">
+                        <p>File Type: <span id="meta-type">-</span></p>
+                        <p>Models Triggered: <span id="meta-models" style="color: var(--accent);">-</span></p>
+                        <p>Routing Notes: <span id="meta-notes">-</span></p>
+                        <p>Processing Time: <span id="meta-time">-</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-panel">
+            <h3>
+                <span>Developer Settings: API Keys</span>
+                <button class="api-btn secondary" onclick="loadActiveKeys()"
+                    style="font-size: 0.9rem; padding: 0.5rem 1rem;">View Active Keys</button>
+            </h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Generate a secure API pull key to access the Deep Sentinel model from external applications.
+            </p>
+            <div class="api-input-group">
+                <input type="text" id="app-name-input" placeholder="Enter App Name (e.g. mobile-ios-client)">
+                <button class="api-btn" onclick="generateApiKey()">Generate Key</button>
+            </div>
+            <div id="generated-key-display"></div>
+        </div>
+    </div>
+
+    <!-- Active Keys Modal Dashboard -->
+    <div class="modal-overlay" id="keys-modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2
+                style="font-size: 2rem; background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+                <span style="-webkit-text-fill-color: initial;">🔑</span> Active API Credentials
+            </h2>
+            <p
+                style="color: var(--text-muted); margin-bottom: 1rem; font-size: 1.05rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem;">
+                The following secure credentials are currently active in the Deep Sentinel memory store. They are fully
+                authorized for cross-application API pulls.
+            </p>
+
+            <div class="keys-list" id="modal-keys-list-content">
+                <!-- Keys dynamically injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const uploadText = document.getElementById('upload-text');
+        const selectedFilename = document.getElementById('selected-filename');
+        const resultPanel = document.getElementById('result-panel');
+
+        const previewContainer = document.getElementById('preview-container');
+        const imgPreview = document.getElementById('img-preview');
+        const vidPreview = document.getElementById('vid-preview');
+
+        // Drag and drop setup
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(fileInput);
+            }
+        });
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                selectedFile = input.files[0];
+                selectedFilename.textContent = selectedFile.name;
+                selectedFilename.style.display = 'block';
+                uploadText.textContent = 'File Selected';
+                analyzeBtn.classList.add('active');
+                analyzeBtn.textContent = 'Analyze Media';
+                resultPanel.style.display = 'none';
+
+                // Setup Preview
+                const fileURL = URL.createObjectURL(selectedFile);
+                previewContainer.style.display = 'block';
+
+                if (selectedFile.type.startsWith('image/')) {
+                    imgPreview.src = fileURL;
+                    imgPreview.style.display = 'block';
+                    vidPreview.style.display = 'none';
+                } else if (selectedFile.type.startsWith('video/')) {
+                    vidPreview.src = fileURL;
+                    vidPreview.style.display = 'block';
+                    imgPreview.style.display = 'none';
+                }
+            }
+        }
+
+        async function analyzeMedia() {
+            if (!selectedFile) return;
+
+            // UI Loading state
+            analyzeBtn.classList.remove('active');
+            analyzeBtn.classList.add('loading');
+            analyzeBtn.textContent = 'Analyzing deepfake signatures...';
+            resultPanel.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'x-deep-sentinel-api-key': 'sk-web-dashboard-client-v1'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    alert('Error analyzing media.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection to Deep Sentinel Failed.');
+            } finally {
+                analyzeBtn.classList.remove('loading');
+                analyzeBtn.textContent = 'Analysis Complete';
+            }
+        }
+
+        function displayResults(data) {
+            resultPanel.style.display = 'block';
+
+            const predText = document.getElementById('prediction-text');
+            predText.textContent = data.prediction;
+            predText.className = data.prediction; // Applies REAL or FAKE color class
+
+            const confPercentage = Math.round(data.confidence * 100);
+
+            // Set ring color
+            const ringColor = data.prediction === 'FAKE' ? '#f87171' : '#4ade80';
+            const ring = document.getElementById('confidence-ring');
+            ring.style.setProperty('--p', `${confPercentage}%`);
+            ring.style.setProperty('--accent', ringColor);
+
+            document.getElementById('confidence-text').textContent = confPercentage + '%';
+
+            document.getElementById('meta-type').textContent = data.type.toUpperCase();
+            document.getElementById('meta-models').textContent = data.models_used.join(' + ');
+            document.getElementById('meta-notes').textContent = data.notes;
+            document.getElementById('meta-time').textContent = data.processing_time_ms + ' ms';
+
+            // Scroll to results
+            resultPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function generateApiKey() {
+            const appNameInput = document.getElementById('app-name-input');
+            const display = document.getElementById('generated-key-display');
+            const appName = appNameInput.value.trim() || 'custom-app';
+
+            try {
+                const response = await fetch(`/generate-key?app_name=${encodeURIComponent(appName)}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    display.style.display = 'block';
+                    display.innerHTML = `<strong>Success!</strong> Your API Key for <i>${data.app_name}</i> is:<br><br><span style="color:white; font-size:1.1rem;">${data.api_key}</span><br><br><span style="color:var(--text-muted); font-size:0.85rem;">Pass this key in the 'x-deep-sentinel-api-key' header.</span>`;
+                    appNameInput.value = '';
+                } else {
+                    alert('Failed to generate API Key');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error connecting to backend API');
+            }
+        }
+
+        async function loadActiveKeys() {
+            const modal = document.getElementById('keys-modal');
+            const content = document.getElementById('modal-keys-list-content');
+
+            try {
+                const response = await fetch('/active-keys');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    content.innerHTML = '';
+                    if (data.keys.length === 0) {
+                        content.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding: 2rem;">No active keys found. Generate one to get started!</p>';
+                    } else {
+                        data.keys.forEach(keyObj => {
+                            const item = document.createElement('div');
+                            item.className = 'key-item';
+                            item.innerHTML = `
+                                <div>
+                                    <span style="display:block;">${keyObj.key}</span>
+                                    <span style="font-size: 0.85rem; color: var(--text-muted); font-family: 'Outfit', sans-serif;">Uses: <strong style="color: var(--accent);">${keyObj.usage}</strong></span>
+                                </div>
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText('${keyObj.key}'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 2000)">Copy</button>
+                            `;
+                            content.appendChild(item);
+                        });
+                    }
+
+                    modal.style.display = 'flex';
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Failed to connect to API.");
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('keys-modal').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,24 @@
+INFO:     Started server process [44182]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:65524 - "GET / HTTP/1.1" 200 OK
+Model <api.test_models.MockModel object at 0x107bd5d30> failed with error: EfficientNet-B4 failed. Failure count: 1
+Model <api.test_models.MockModel object at 0x107bd5d30> failed with error: EfficientNet-B4 failed. Failure count: 2
+Model <api.test_models.MockModel object at 0x107bd5d30> failed with error: EfficientNet-B4 failed. Failure count: 3
+Circuit opened for model <api.test_models.MockModel object at 0x107bd5d30> after 3 failures.
+INFO:     127.0.0.1:65525 - "GET /test/model_fallback?primary_fails=3&secondary_fails=0 HTTP/1.1" 200 OK
+Pipeline Test_CRITICAL failed with error: Pipeline stage failed!
+INFO:     127.0.0.1:65526 - "GET /test/pipeline_fallback?pipeline_type=CRITICAL&fail_pipeline=true&has_fallback=true HTTP/1.1" 200 OK
+Pipeline Test_IMPORTANT failed with error: Pipeline stage failed!
+INFO:     127.0.0.1:65527 - "GET /test/pipeline_fallback?pipeline_type=IMPORTANT&fail_pipeline=true&has_fallback=false HTTP/1.1" 200 OK
+GPU OOM reported. Count: 1
+GPU OOM reported. Count: 2
+GPU OOM reported. Count: 3
+GPU marked as UNAVAILABLE due to repeated OOMs
+Fell back to CPU worker
+INFO:     127.0.0.1:65528 - "GET /test/gpu_health?ooms_to_trigger=3 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [44182]

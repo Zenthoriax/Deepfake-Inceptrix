@@ -1,0 +1,51 @@
+# fallback_config.yaml
+
+model_fallbacks:
+  confidence_threshold: 0.65
+  circuit_breaker_threshold: 3
+  cooldown_seconds: 60
+  timeout_seconds: 2.0
+
+  chains:
+    core_image:
+      primary: mobilenet_v3_large # Tier 1: Fast Screening Model
+      secondary: efficientnet_b4 # Tier 2: Heavy Decision Model
+      emergency: xceptionnet # Tier 3: Emergency Fallback
+    lightweight_fast:
+      primary: efficientnet_b0
+      secondary: mobilenet_v3_large
+      emergency: efficientnet_b0
+    temporal_video:
+      primary: timesformer
+      secondary: slowfast_network
+      emergency: cnn_lstm
+    spectral_frequency:
+      primary: efficientnet_fft
+      secondary: resnet18_fft
+      emergency: resnet18_fft
+    biological_rppg:
+      primary: physnet
+      secondary: deepphys
+      emergency: deepphys
+    audio_deepfake:
+      primary: wav2vec2_0
+      secondary: ecapa_tdnn
+      emergency: rawnet2
+    gan_fingerprint:
+      primary: patch_based_cnn
+      secondary: noiseprint_cnn
+      emergency: noiseprint_cnn
+
+pipeline_fallbacks:
+  face_detection:
+    chain: [yolov8_face, mtcnn, retinaface, full_frame]
+  degradation_score_warning_threshold: 30
+  degradation_score_critical_threshold: 60
+
+infrastructure:
+  zones: [us-east-1a, us-east-1b, us-west-2a]
+  primary_zone: us-east-1a
+  failover_latency_ms: 30000
+  gpu_fallback_cpu_enabled: true
+  queue_buffer_max_seconds: 120
+  dlq_max_retries: 3

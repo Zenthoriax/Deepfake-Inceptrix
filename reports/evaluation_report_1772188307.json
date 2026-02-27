@@ -1,0 +1,17 @@
+{
+    "timestamp": "2026-02-27T16:01:47.103965",
+    "datasets_evaluated": [
+        "JamieWithofs/Deepfake-and-real-images-4"
+    ],
+    "total_evaluation_samples": 160,
+    "evaluation_time_seconds": 11.85,
+    "metrics": {
+        "loss": 0.6608,
+        "accuracy": 0.875,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "auc_roc": NaN
+    },
+    "model_architecture": "EfficientNet-B4"
+}

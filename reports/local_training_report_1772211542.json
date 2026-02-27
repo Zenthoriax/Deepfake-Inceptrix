@@ -1,0 +1,16 @@
+{
+    "timestamp": "2026-02-27T22:29:02.990631",
+    "training_type": "Local ImageFolder",
+    "dataset_path": "train",
+    "total_train_samples": 78336,
+    "total_val_samples": 19585,
+    "epochs": 1,
+    "metrics": {
+        "val_loss": 0.1103,
+        "val_accuracy": 0.9602,
+        "val_precision": 0.9326,
+        "val_recall": 0.7516,
+        "val_f1_score": 0.8323,
+        "val_auc_roc": 0.9792
+    }
+}
