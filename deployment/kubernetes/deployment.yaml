@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deep-sentinel-api
+  labels:
+    app: deep-sentinel
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: deep-sentinel
+  template:
+    metadata:
+      labels:
+        app: deep-sentinel
+    spec:
+      containers:
+        - name: deep-sentinel-api
+          # Replace with your actual Azure Container Registry (ACR) image path
+          image: deepsentinelacr.azurecr.io/deep-sentinel:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DEEP_SENTINEL_ROOT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: deep-sentinel-secrets
+                  key: api-root-key
+          resources:
+            requests:
+              memory: "14Gi"
+              cpu: "3"
+            limits:
+              # Hard limit enforcing the 16GB RAM constraint requested
+              memory: "15Gi"
+              cpu: "4"
+          volumeMounts:
+            - name: model-storage
+              mountPath: /app/models
+      volumes:
+        - name: model-storage
+          emptyDir:
+            # Provisions an ephemeral local volume with the requested 200GB capacity
+            sizeLimit: 200Gi
